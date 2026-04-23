@@ -169,8 +169,8 @@ function interpretarTexto(txt){
   const t=txt.toLowerCase();
   const op={tipo:null,monto:null,moneda:null,cuentaOrigenId:null,cuentaDestinoId:null,notas:txt};
 
-  // Tipo — "le debo"=salida, "me debe"=entrada
-  if(/\b(me debe|me pag[oó]|cobr[eé]|entr[oó]|recibi[oó]|deposit[oó])\b/.test(t)) op.tipo='entrada';
+  // Tipo — "me debe/pagó/cobré" = Entrada | "le debo/presté/pagué" = Salida
+  if(/\b(me debe|me pag[oó]|cobr[eé]|entr[oó]|recibi[oó]|deposit[oó])\b/.test(t))             op.tipo='entrada';
   else if(/\b(le debo|debo|sal[ií]|pagu[eé]|transfer[ií]|envi[eé]|prest[eé]|sac[oó])\b/.test(t)) op.tipo='salida';
   else if(/\b(compr[eé]|compra)\b/.test(t))  op.tipo='compra';
   else if(/\b(vend[ií]|venta)\b/.test(t))    op.tipo='venta';
@@ -193,29 +193,27 @@ function interpretarTexto(txt){
     if(t.includes(nombre)&&!encontrados.find(x=>x.id===c.id))encontrados.push(c);
   }
 
-  // "le debo / me debe" → Mi Caja es siempre una de las partes
-  const mencionaCaja=/\b(le debo|debo|me debe|me pag[oó]|pagu[eé]|cobr[eé]|entr[oó]|recib[ií]|prest[eé]|envi[eé])\b/.test(t);
+  // Asignar origen/destino según tipo
+  // Entrada → origen=contacto, destino=MiCaja
+  // Salida  → origen=MiCaja,   destino=contacto
+  const esMiCaja=op.tipo==='entrada'||op.tipo==='salida';
 
   if(encontrados.length>=2){
     op.cuentaOrigenId=encontrados[0].id;
     op.cuentaDestinoId=encontrados[1].id;
   } else if(encontrados.length===1){
-    // Si el texto implica que yo soy parte, asignar Mi Caja al otro lado
-    if(mencionaCaja){
-      if(op.tipo==='entrada'||op.tipo==='cobro'||/me pag[oó]|cobr[eé]|entr[oó]|recib[ií]|me debe/.test(t)){
-        op.cuentaOrigenId=encontrados[0].id;
-        op.cuentaDestinoId='__caja__';
-      } else {
-        op.cuentaOrigenId='__caja__';
-        op.cuentaDestinoId=encontrados[0].id;
-      }
+    if(op.tipo==='entrada'){
+      op.cuentaOrigenId=encontrados[0].id;
+      op.cuentaDestinoId='__caja__';
+    } else if(op.tipo==='salida'){
+      op.cuentaOrigenId='__caja__';
+      op.cuentaDestinoId=encontrados[0].id;
     } else {
-      if(op.tipo==='entrada'||op.tipo==='compra') op.cuentaOrigenId=encontrados[0].id;
-      else op.cuentaDestinoId=encontrados[0].id;
+      // compra/venta: contacto como origen
+      op.cuentaOrigenId=encontrados[0].id;
     }
-  } else if(encontrados.length===0&&mencionaCaja){
-    // No detectó ningún contacto pero hay implicación de yo — dejar caja lista
-    if(op.tipo==='entrada'||/me debe|cobr[eé]/.test(t)) op.cuentaDestinoId='__caja__';
+  } else if(encontrados.length===0&&esMiCaja){
+    if(op.tipo==='entrada') op.cuentaDestinoId='__caja__';
     else op.cuentaOrigenId='__caja__';
   }
 
@@ -360,6 +358,18 @@ function renderHome(){
         <div style="font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:4px">${hoy}</div>
       </div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--ink3);background:var(--bg2);padding:6px 10px;border-radius:8px;border:1px solid var(--border)">${movsHoy.length} mov hoy</div>
+    </div>
+
+    <!-- Me deben / Le debo -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="card" style="padding:14px">
+        <div class="lbl" style="margin-bottom:8px">Me deben</div>
+        ${resumenHtml(meDeben,'var(--green)','—')}
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="lbl" style="margin-bottom:8px">Le debo</div>
+        ${resumenHtml(leDebo,'var(--red)','—')}
+      </div>
     </div>
 
     <!-- Mi caja -->

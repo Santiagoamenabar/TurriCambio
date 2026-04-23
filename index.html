@@ -232,18 +232,17 @@ function aplicarMovimiento(mov){
 
   switch(mov.tipo){
     case 'entrada':
-      // alguien me paga → origen pierde, mi saldo con origen sube (me debe menos / yo tengo más)
-      if(origen){origen.saldos=origen.saldos||{};origen.saldos[m]=(origen.saldos[m]||0)-monto;}
+      // Tomi me debe → Tomi +3000 (me debe), Mi Caja +3000
+      if(origen&&origen.id!=='__caja__'){origen.saldos=origen.saldos||{};origen.saldos[m]=(origen.saldos[m]||0)+monto;}
       if(destino){destino.saldos=destino.saldos||{};destino.saldos[m]=(destino.saldos[m]||0)+monto;}
       break;
     case 'salida':
-      // yo pago → origen pierde, destino gana
+      // Le debo a Tomi → Tomi -3000 (le debo), Mi Caja -3000
       if(origen){origen.saldos=origen.saldos||{};origen.saldos[m]=(origen.saldos[m]||0)-monto;}
-      if(destino){destino.saldos=destino.saldos||{};destino.saldos[m]=(destino.saldos[m]||0)+monto;}
+      if(destino&&destino.id!=='__caja__'){destino.saldos=destino.saldos||{};destino.saldos[m]=(destino.saldos[m]||0)-monto;}
       break;
     case 'compra':
     case 'venta':
-      // afecta ambas cuentas si se especifican
       if(origen){origen.saldos=origen.saldos||{};origen.saldos[m]=(origen.saldos[m]||0)-monto;}
       if(destino){destino.saldos=destino.saldos||{};destino.saldos[m]=(destino.saldos[m]||0)+monto;}
       break;
@@ -367,7 +366,7 @@ function renderHome(){
         ${resumenHtml(meDeben,'var(--green)','—')}
       </div>
       <div class="card" style="padding:14px">
-        <div class="lbl" style="margin-bottom:8px">Le debo</div>
+        <div class="lbl" style="margin-bottom:8px">Debo</div>
         ${resumenHtml(leDebo,'var(--red)','—')}
       </div>
     </div>
@@ -916,15 +915,7 @@ function abrirEditarCuenta(cid){
           <option value="otro" ${c.tipo==='otro'?'selected':''}>Otro</option>
         </select>
       </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div class="lbl" style="margin-bottom:10px">Ajuste manual de saldos</div>
-        ${MONS.map(m=>`
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <span style="font-size:12px;width:20px">${MFLAG[m]}</span>
-            <span class="lbl" style="width:36px">${m}</span>
-            <input type="number" id="ec-s-${m}" value="${c.saldos?.[m]||0}" style="flex:1"/>
-          </div>`).join('')}
-      </div>
+
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <button onclick="this.closest('.modal-bg').remove()" style="padding:14px;border-radius:12px;background:var(--bg2);font-weight:600;border:1.5px solid var(--border)">Cancelar</button>
@@ -941,10 +932,6 @@ function guardarEditarCuenta(cid){
   if(!nombre){alert('Ingresá un nombre.');return;}
   c.nombre=nombre.toUpperCase();
   c.tipo=document.getElementById('ec-tipo')?.value||c.tipo;
-  for(const m of MONS){
-    const v=parseFloat(document.getElementById(`ec-s-${m}`)?.value);
-    if(!isNaN(v))c.saldos[m]=v;
-  }
   saveS();
   document.querySelector('.modal-bg')?.remove();
   document.getElementById('cuenta-overlay')?.remove();

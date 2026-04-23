@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Cuentas"/>
@@ -58,7 +58,7 @@ textarea{resize:none}
 .tb .tl{font-size:10px;font-family:var(--mono);font-weight:600;letter-spacing:.05em;transition:color .15s}
 .tb .td{width:4px;height:4px;border-radius:50%;margin-top:1px;transition:background .15s}
 
-#fab{position:absolute;bottom:92px;right:20px;width:60px;height:60px;border-radius:50%;background:var(--ink);border:none;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-lg);z-index:50;cursor:pointer}
+#fab{position:absolute;bottom:130px;right:20px;width:60px;height:60px;border-radius:50%;background:var(--ink);border:none;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-lg);z-index:50;cursor:pointer}
 #fab:active{transform:scale(.92)}
 
 .overlay{position:absolute;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;overflow:hidden}
@@ -171,7 +171,7 @@ function interpretarTexto(txt){
 
   // Tipo — "me debe/pagó/cobré" = Entrada | "le debo/presté/pagué" = Salida
   if(/\b(me debe|me pag[oó]|cobr[eé]|entr[oó]|recibi[oó]|deposit[oó])\b/.test(t))             op.tipo='entrada';
-  else if(/\b(le debo|debo|sal[ií]|pagu[eé]|transfer[ií]|envi[eé]|prest[eé]|sac[oó])\b/.test(t)) op.tipo='salida';
+  else if(/(le debo|debo|\bsal[ií]\b|pagu[eé]|transfer[ií]|envi[eé]|prest[eé]|\bsac[oó]\b)/.test(t)) op.tipo='salida';
   else if(/\b(compr[eé]|compra)\b/.test(t))  op.tipo='compra';
   else if(/\b(vend[ií]|venta)\b/.test(t))    op.tipo='venta';
 
@@ -684,6 +684,7 @@ function startMic(){
     const txt=prompt('Tu navegador no soporta voz. Escribí la operación:');
     if(txt)procesarTexto(txt); return;
   }
+  if(recObj){try{recObj.abort();}catch(e){}recObj=null;}
   let transcript='';
   const rec=new SR();rec.lang='es-AR';rec.continuous=false;rec.interimResults=true;
   rec.onstart=()=>renderFormMov('escuchando','');
